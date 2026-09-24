@@ -1,0 +1,65 @@
+# Prod Inference на целой карте (tensor-parallel-size=8)
+# Как в первой статье — «одна реплика — один узел целиком»
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-prod-full
+  namespace: inference-prod
+  labels:
+    workload-type: inference
+    gpu-mode: physical
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: llm-prod-full
+  template:
+    metadata:
+      labels:
+        app: llm-prod-full
+        gpu-mode: physical
+    spec:
+      nodeSelector:
+        node-role/gpu: ""
+      containers:
+      - name: vllm
+        image: vllm/vllm-openai:latest
+        args:
+          - "--model"
+          - "meta-llama/Llama-3.1-70B-Instruct"
+          - "--tensor-parallel-size"
+          - "8"
+          - "--max-model-len"
+          - "8192"
+        ports:
+        - name: http
+          containerPort: 8000
+        resources:
+          limits:
+            gpu.deckhouse.io/h100: "8"
+            cpu: "16"
+            memory: "128Gi"
+          requests:
+            cpu: "8"
+            memory: "64Gi"
+      tolerations:
+      - key: node-role
+        operator: Equal
+        value: gpu
+        effect: NoSchedule
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-prod-full
+  namespace: inference-prod
+spec:
+  selector:
+    app: llm-prod-full
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000

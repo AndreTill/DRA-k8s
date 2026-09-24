@@ -1,0 +1,16 @@
+# DeviceClass: MIG-профиль 3g.40gb на H100
+# Для продового инференса, которому не нужна целая карта
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: nvidia-h100-mig-3g40
+spec:
+  selectors:
+    - cel:
+        expression: |
+          device.driver == "gpu.deckhouse.io" &&
+          device.attributes["gpu.deckhouse.io"].vendor == "nvidia" &&
+          device.attributes["gpu.deckhouse.io"].deviceType == "MIG" &&
+          device.attributes["gpu.deckhouse.io"].migProfile == "3g.40gb"
+  # Feature gate DRAExtendedResource
+  extendedResourceName: gpu.deckhouse.io/h100-mig-40

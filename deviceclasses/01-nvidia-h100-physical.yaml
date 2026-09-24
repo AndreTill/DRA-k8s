@@ -1,0 +1,18 @@
+# DeviceClass: целая физическая H100
+# Используется для training / exclusive workloads
+# Мостик extendedResourceName позволяет писать limits: gpu.deckhouse.io/h100: N
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: nvidia-h100-physical
+spec:
+  selectors:
+    - cel:
+        expression: |
+          device.driver == "gpu.deckhouse.io" &&
+          device.attributes["gpu.deckhouse.io"].vendor == "nvidia" &&
+          device.attributes["gpu.deckhouse.io"].deviceType == "Physical" &&
+          device.attributes["gpu.deckhouse.io"].cudaReady == true &&
+          device.attributes["gpu.deckhouse.io"].productName.lowerAscii().contains("h100")
+  # Feature gate DRAExtendedResource
+  extendedResourceName: gpu.deckhouse.io/h100

@@ -1,0 +1,57 @@
+# Small AI service: 50% MPS-доля
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: embeddings-mps
+  namespace: inference-team
+  labels:
+    workload-type: small-ai
+    gpu-mode: mps
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: embeddings-mps
+  template:
+    metadata:
+      labels:
+        app: embeddings-mps
+        gpu-mode: mps
+    spec:
+      resourceClaims:
+        - name: gpu
+          resourceClaimTemplateName: rct-h100-mps-50
+      containers:
+      - name: app
+        image: pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-lc"]
+        args:
+          - |
+            echo "=== MPS share 50% ==="
+            nvidia-smi
+            python -c "
+            import torch
+            print(f'CUDA available: {torch.cuda.is_available()}')
+            print(f'Device count: {torch.cuda.device_count()}')
+            if torch.cuda.is_available():
+                print(f'Device: {torch.cuda.get_device_name(0)}')
+            print('embeddings MPS-50 ready')
+            "
+            sleep 3600
+        resources:
+          requests:
+            cpu: "4"
+            memory: "16Gi"
+          limits:
+            cpu: "8"
+            memory: "32Gi"
+          claims:
+            - name: gpu
+      tolerations:
+      - key: node-role
+        operator: Equal
+        value: gpu
+        effect: NoSchedule
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule

@@ -1,0 +1,18 @@
+# ResourceClaimTemplate: 25% доли Physical H100 через MPS
+# Feature gate DRAConsumableCapacity
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: rct-h100-mps-25
+  namespace: inference-team
+spec:
+  spec:
+    devices:
+      requests:
+        - name: gpu
+          exactly:
+            deviceClassName: nvidia-h100-mps
+            count: 1
+            capacity:
+              requests:
+                sharePercent: "25"

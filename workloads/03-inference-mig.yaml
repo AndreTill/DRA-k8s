@@ -1,0 +1,70 @@
+# Prod Inference: MIG-профиль 3g.40gb
+# Использует extended resource gpu.deckhouse.io/h100-mig-40
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-inference-mig
+  namespace: inference-prod
+  labels:
+    workload-type: inference
+    gpu-mode: mig
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: llm-inference-mig
+  template:
+    metadata:
+      labels:
+        app: llm-inference-mig
+        gpu-mode: mig
+    spec:
+      containers:
+      - name: vllm
+        image: vllm/vllm-openai:latest
+        args:
+          - "--model"
+          - "meta-llama/Llama-3.1-8B-Instruct"
+          - "--max-model-len"
+          - "4096"
+          - "--gpu-memory-utilization"
+          - "0.90"
+        ports:
+        - name: http
+          containerPort: 8000
+        resources:
+          limits:
+            gpu.deckhouse.io/h100-mig-40: "1"
+            cpu: "8"
+            memory: "32Gi"
+          requests:
+            cpu: "4"
+            memory: "16Gi"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 6
+      tolerations:
+      - key: node-role
+        operator: Equal
+        value: gpu
+        effect: NoSchedule
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-inference-mig
+  namespace: inference-prod
+spec:
+  selector:
+    app: llm-inference-mig
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000

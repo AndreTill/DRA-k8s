@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # DeviceClasses (cluster-scoped)
+  - deviceclasses/01-nvidia-h100-physical.yaml
+  - deviceclasses/02-nvidia-h100-mig-3g40.yaml
+  - deviceclasses/03-nvidia-h100-mps.yaml
+
+  # Namespaces
+  - workloads/00-namespaces.yaml
+
+  # ResourceClaimTemplates (namespaced)
+  - claims/01-rct-h100-mps-25.yaml
+  - claims/02-rct-h100-mps-50.yaml
+
+  # Workloads
+  - workloads/01-train-job-physical.yaml
+  - workloads/02-train-statefulset-multinode.yaml
+  - workloads/03-inference-mig.yaml
+  - workloads/04-reranker-mps-25.yaml
+  - workloads/05-embeddings-mps-50.yaml
+  - workloads/06-prod-inference-full-physical.yaml
+
+  # Legacy (опционально)
+  - legacy/01-gpu-smoke-deviceplugin.yaml

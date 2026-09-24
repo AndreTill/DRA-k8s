@@ -1,0 +1,52 @@
+# Training Job: 8× Physical H100 на одном узле
+# Использует extended resource (мостик DRAExtendedResource)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: llm-train-single-node
+  namespace: ml-team
+  labels:
+    workload-type: training
+    gpu-mode: physical
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: llm-train-single-node
+        gpu-mode: physical
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: trainer
+        image: pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-lc"]
+        args:
+          - |
+            echo "=== nvidia-smi ==="
+            nvidia-smi
+            echo "=== CUDA devices ==="
+            python -c "
+            import torch
+            print(f'CUDA available: {torch.cuda.is_available()}')
+            print(f'Device count: {torch.cuda.device_count()}')
+            for i in range(torch.cuda.device_count()):
+                print(f'  [{i}] {torch.cuda.get_device_name(i)}')
+            print('training started on full H100')
+            "
+        resources:
+          limits:
+            gpu.deckhouse.io/h100: "8"
+            cpu: "32"
+            memory: "256Gi"
+          requests:
+            cpu: "16"
+            memory: "128Gi"
+      tolerations:
+      - key: node-role
+        operator: Equal
+        value: gpu
+        effect: NoSchedule
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule

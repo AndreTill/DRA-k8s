@@ -1,0 +1,83 @@
+# Multi-node training: 4 реплики × 8 GPU = 32 GPU
+# StatefulSet + Parallel podManagementPolicy (как в первой статье)
+apiVersion: v1
+kind: Service
+metadata:
+  name: train-llm
+  namespace: ml-train
+spec:
+  clusterIP: None
+  selector:
+    app: train-llm
+  ports:
+  - name: rdzv
+    port: 29500
+    targetPort: 29500
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: train-llm
+  namespace: ml-train
+  labels:
+    workload-type: training
+    gpu-mode: physical
+spec:
+  serviceName: train-llm
+  replicas: 4
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: train-llm
+  template:
+    metadata:
+      labels:
+        app: train-llm
+        gpu-mode: physical
+    spec:
+      nodeSelector:
+        node-role/gpu: ""
+      tolerations:
+      - key: node-role
+        operator: Equal
+        value: gpu
+        effect: NoSchedule
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: trainer
+        image: nvcr.io/nvidia/pytorch:24.12-py3
+        command: ["bash", "-lc"]
+        args:
+          - |
+            echo "=== nvidia-smi ==="
+            nvidia-smi
+            echo "Node rank: ${HOSTNAME##*-}"
+            # Заглушка вместо реального train.py
+            # В реальном сценарии:
+            # torchrun \
+            #   --nnodes=4 \
+            #   --nproc_per_node=8 \
+            #   --rdzv_backend=c10d \
+            #   --rdzv_endpoint=train-llm-0.train-llm:29500 \
+            #   train.py
+            python -c "
+            import torch, os
+            print(f'CUDA available: {torch.cuda.is_available()}')
+            print(f'Device count: {torch.cuda.device_count()}')
+            print(f'Hostname: {os.environ.get(\"HOSTNAME\", \"unknown\")}')
+            print('multi-node training placeholder ready')
+            "
+            sleep 3600
+        ports:
+        - name: rdzv
+          containerPort: 29500
+        resources:
+          limits:
+            gpu.deckhouse.io/h100: "8"
+            cpu: "32"
+            memory: "256Gi"
+          requests:
+            cpu: "16"
+            memory: "128Gi"

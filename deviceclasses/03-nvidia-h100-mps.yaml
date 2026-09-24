@@ -1,0 +1,27 @@
+# DeviceClass: Physical H100 + MPS (controlled sharing)
+# Для мелких AI-сервисов (reranker, embeddings, summarizer и т.п.)
+# sharePercent задаётся в ResourceClaim / ResourceClaimTemplate
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: nvidia-h100-mps
+spec:
+  selectors:
+    - cel:
+        expression: |
+          device.driver == "gpu.deckhouse.io" &&
+          device.attributes["gpu.deckhouse.io"].vendor == "nvidia" &&
+          device.attributes["gpu.deckhouse.io"].deviceType == "Physical" &&
+          device.attributes["gpu.deckhouse.io"].cudaReady == true &&
+          device.attributes["gpu.deckhouse.io"].productName.lowerAscii().contains("h100")
+  config:
+    - opaque:
+        driver: gpu.deckhouse.io
+        parameters:
+          apiVersion: resource.gpu.deckhouse.io/v1alpha1
+          kind: GpuConfig
+          sharing:
+            strategy: MPS
+            mpsConfig:
+              # Дефолтная доля, если claim не указал свою
+              defaultActiveThreadPercentage: 25
