@@ -1,0 +1,17 @@
+# DeviceClass: физические NVIDIA GPU (driver gpu.nvidia.com)
+# Helm-чарт NVIDIA DRA Driver обычно уже создаёт gpu.nvidia.com.
+# Этот манифест — явный/идемпотентный вариант + extended resource bridge.
+#
+# Feature gate: DRAExtendedResource
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: gpu.nvidia.com
+spec:
+  selectors:
+    - cel:
+        expression: |
+          device.driver == "gpu.nvidia.com" &&
+          device.attributes["gpu.nvidia.com"].type == "gpu"
+  # Мостик: limits/requests nvidia.com/gpu → DRA allocation
+  extendedResourceName: nvidia.com/gpu

@@ -1,0 +1,26 @@
+# DeviceClass: MIG-устройства (driver gpu.nvidia.com, type=mig)
+# NVIDIA DRA Driver создаёт mig.nvidia.com по умолчанию.
+# Здесь — явный класс + фильтр по профилю 3g.40gb (H100).
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: mig.nvidia.com
+spec:
+  selectors:
+    - cel:
+        expression: |
+          device.driver == "gpu.nvidia.com" &&
+          device.attributes["gpu.nvidia.com"].type == "mig"
+---
+# Кастомный класс только для профиля 3g.40gb
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: nvidia-mig-3g40
+spec:
+  selectors:
+    - cel:
+        expression: |
+          device.driver == "gpu.nvidia.com" &&
+          device.attributes["gpu.nvidia.com"].type == "mig" &&
+          device.attributes["gpu.nvidia.com"].productName.lowerAscii().contains("3g.40gb")

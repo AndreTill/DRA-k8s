@@ -1,0 +1,14 @@
+# DeviceClass: только H100 (physical)
+# Удобно для training-пула, где нужна предсказуемость.
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: nvidia-h100
+spec:
+  selectors:
+    - cel:
+        expression: |
+          device.driver == "gpu.nvidia.com" &&
+          device.attributes["gpu.nvidia.com"].type == "gpu" &&
+          device.attributes["gpu.nvidia.com"].productName.lowerAscii().contains("h100")
+  extendedResourceName: nvidia.com/h100

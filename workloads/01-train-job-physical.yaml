@@ -1,5 +1,5 @@
-# Training Job: 8× Physical H100 на одном узле
-# Использует extended resource (мостик DRAExtendedResource)
+# Training Job: 8× Physical GPU через extended resource (nvidia.com/gpu)
+# Требует DeviceClass gpu.nvidia.com с extendedResourceName: nvidia.com/gpu
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -25,28 +25,27 @@ spec:
           - |
             echo "=== nvidia-smi ==="
             nvidia-smi
-            echo "=== CUDA devices ==="
             python -c "
             import torch
             print(f'CUDA available: {torch.cuda.is_available()}')
             print(f'Device count: {torch.cuda.device_count()}')
             for i in range(torch.cuda.device_count()):
                 print(f'  [{i}] {torch.cuda.get_device_name(i)}')
-            print('training started on full H100')
+            print('training started on full GPUs')
             "
         resources:
           limits:
-            gpu.deckhouse.io/h100: "8"
+            nvidia.com/gpu: "8"
             cpu: "32"
             memory: "256Gi"
           requests:
             cpu: "16"
             memory: "128Gi"
       tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
       - key: node-role
         operator: Equal
         value: gpu
-        effect: NoSchedule
-      - key: nvidia.com/gpu
-        operator: Exists
         effect: NoSchedule

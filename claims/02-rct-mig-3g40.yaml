@@ -1,0 +1,15 @@
+# ResourceClaimTemplate: 1× MIG 3g.40gb
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: rct-mig-3g40
+  namespace: inference-prod
+spec:
+  spec:
+    devices:
+      requests:
+        - name: gpu
+          exactly:
+            deviceClassName: nvidia-mig-3g40
+            allocationMode: ExactCount
+            count: 1

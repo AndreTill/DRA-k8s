@@ -1,5 +1,5 @@
-# Legacy smoke-test: классический device plugin (nvidia.com/gpu)
-# Для сравнения с DRA-моделью
+# Legacy smoke: классический device plugin (nvidia.com/gpu)
+# Работает только если на узле активен NVIDIA device plugin (не DRA).
 apiVersion: v1
 kind: Pod
 metadata:

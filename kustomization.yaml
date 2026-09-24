@@ -3,24 +3,26 @@ kind: Kustomization
 
 resources:
   # DeviceClasses (cluster-scoped)
-  - deviceclasses/01-nvidia-h100-physical.yaml
-  - deviceclasses/02-nvidia-h100-mig-3g40.yaml
-  - deviceclasses/03-nvidia-h100-mps.yaml
+  - deviceclasses/01-gpu-nvidia-physical.yaml
+  - deviceclasses/02-mig-nvidia.yaml
+  - deviceclasses/03-gpu-nvidia-h100.yaml
 
   # Namespaces
   - workloads/00-namespaces.yaml
 
-  # ResourceClaimTemplates (namespaced)
-  - claims/01-rct-h100-mps-25.yaml
-  - claims/02-rct-h100-mps-50.yaml
+  # ResourceClaimTemplates
+  - claims/01-rct-gpu-full.yaml
+  - claims/02-rct-mig-3g40.yaml
+  - claims/03-rct-gpu-mps.yaml
+  - claims/04-rct-gpu-timeslicing.yaml
 
   # Workloads
   - workloads/01-train-job-physical.yaml
   - workloads/02-train-statefulset-multinode.yaml
   - workloads/03-inference-mig.yaml
-  - workloads/04-reranker-mps-25.yaml
-  - workloads/05-embeddings-mps-50.yaml
-  - workloads/06-prod-inference-full-physical.yaml
+  - workloads/04-reranker-mps.yaml
+  - workloads/05-embeddings-timeslicing.yaml
+  - workloads/06-prod-inference-full.yaml
 
   # Legacy (опционально)
   - legacy/01-gpu-smoke-deviceplugin.yaml

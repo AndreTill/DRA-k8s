@@ -1,5 +1,4 @@
-# Multi-node training: 4 реплики × 8 GPU = 32 GPU
-# StatefulSet + Parallel podManagementPolicy (как в первой статье)
+# Multi-node training: 4 реплики × 8 GPU
 apiVersion: v1
 kind: Service
 metadata:
@@ -38,12 +37,12 @@ spec:
       nodeSelector:
         node-role/gpu: ""
       tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
       - key: node-role
         operator: Equal
         value: gpu
-        effect: NoSchedule
-      - key: nvidia.com/gpu
-        operator: Exists
         effect: NoSchedule
       containers:
       - name: trainer
@@ -53,20 +52,16 @@ spec:
           - |
             echo "=== nvidia-smi ==="
             nvidia-smi
-            echo "Node rank: ${HOSTNAME##*-}"
-            # Заглушка вместо реального train.py
-            # В реальном сценарии:
-            # torchrun \
-            #   --nnodes=4 \
-            #   --nproc_per_node=8 \
+            echo "Node: ${HOSTNAME}"
+            # Реальный запуск:
+            # torchrun --nnodes=4 --nproc_per_node=8 \
             #   --rdzv_backend=c10d \
             #   --rdzv_endpoint=train-llm-0.train-llm:29500 \
             #   train.py
             python -c "
             import torch, os
-            print(f'CUDA available: {torch.cuda.is_available()}')
-            print(f'Device count: {torch.cuda.device_count()}')
-            print(f'Hostname: {os.environ.get(\"HOSTNAME\", \"unknown\")}')
+            print(f'CUDA: {torch.cuda.is_available()}, count={torch.cuda.device_count()}')
+            print(f'Host: {os.environ.get(\"HOSTNAME\")}')
             print('multi-node training placeholder ready')
             "
             sleep 3600
@@ -75,7 +70,7 @@ spec:
           containerPort: 29500
         resources:
           limits:
-            gpu.deckhouse.io/h100: "8"
+            nvidia.com/gpu: "8"
             cpu: "32"
             memory: "256Gi"
           requests:

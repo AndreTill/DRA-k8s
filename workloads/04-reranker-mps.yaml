@@ -1,0 +1,52 @@
+# Small AI: MPS sharing (GpuConfig strategy: MPS)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reranker-mps
+  namespace: inference-team
+  labels:
+    workload-type: small-ai
+    gpu-mode: mps
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: reranker-mps
+  template:
+    metadata:
+      labels:
+        app: reranker-mps
+        gpu-mode: mps
+    spec:
+      resourceClaims:
+        - name: gpu
+          resourceClaimTemplateName: rct-gpu-mps
+      containers:
+      - name: app
+        image: pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-lc"]
+        args:
+          - |
+            echo "=== MPS share ==="
+            nvidia-smi
+            python -c "
+            import torch
+            print(f'CUDA: {torch.cuda.is_available()}, count={torch.cuda.device_count()}')
+            if torch.cuda.is_available():
+                print(f'Device: {torch.cuda.get_device_name(0)}')
+            print('reranker MPS ready')
+            "
+            sleep 3600
+        resources:
+          requests:
+            cpu: "2"
+            memory: "8Gi"
+          limits:
+            cpu: "4"
+            memory: "16Gi"
+          claims:
+            - name: gpu
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule

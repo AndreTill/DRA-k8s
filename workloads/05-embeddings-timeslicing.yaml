@@ -1,0 +1,50 @@
+# Small AI: TimeSlicing sharing
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: embeddings-timeslicing
+  namespace: inference-team
+  labels:
+    workload-type: small-ai
+    gpu-mode: timeslicing
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: embeddings-timeslicing
+  template:
+    metadata:
+      labels:
+        app: embeddings-timeslicing
+        gpu-mode: timeslicing
+    spec:
+      resourceClaims:
+        - name: gpu
+          resourceClaimTemplateName: rct-gpu-timeslicing
+      containers:
+      - name: app
+        image: pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
+        command: ["bash", "-lc"]
+        args:
+          - |
+            echo "=== TimeSlicing ==="
+            nvidia-smi
+            python -c "
+            import torch
+            print(f'CUDA: {torch.cuda.is_available()}, count={torch.cuda.device_count()}')
+            print('embeddings TimeSlicing ready')
+            "
+            sleep 3600
+        resources:
+          requests:
+            cpu: "4"
+            memory: "16Gi"
+          limits:
+            cpu: "8"
+            memory: "32Gi"
+          claims:
+            - name: gpu
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule

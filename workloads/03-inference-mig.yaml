@@ -1,5 +1,4 @@
-# Prod Inference: MIG-профиль 3g.40gb
-# Использует extended resource gpu.deckhouse.io/h100-mig-40
+# Prod Inference: MIG 3g.40gb через ResourceClaimTemplate
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,6 +18,9 @@ spec:
         app: llm-inference-mig
         gpu-mode: mig
     spec:
+      resourceClaims:
+        - name: gpu
+          resourceClaimTemplateName: rct-mig-3g40
       containers:
       - name: vllm
         image: vllm/vllm-openai:latest
@@ -33,13 +35,14 @@ spec:
         - name: http
           containerPort: 8000
         resources:
-          limits:
-            gpu.deckhouse.io/h100-mig-40: "1"
-            cpu: "8"
-            memory: "32Gi"
           requests:
             cpu: "4"
             memory: "16Gi"
+          limits:
+            cpu: "8"
+            memory: "32Gi"
+          claims:
+            - name: gpu
         readinessProbe:
           httpGet:
             path: /health
@@ -48,10 +51,6 @@ spec:
           periodSeconds: 10
           failureThreshold: 6
       tolerations:
-      - key: node-role
-        operator: Equal
-        value: gpu
-        effect: NoSchedule
       - key: nvidia.com/gpu
         operator: Exists
         effect: NoSchedule

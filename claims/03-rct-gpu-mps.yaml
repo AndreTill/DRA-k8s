@@ -1,0 +1,27 @@
+# ResourceClaimTemplate: physical GPU + MPS sharing
+# Opaque config: resource.nvidia.com/v1beta1 GpuConfig
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: rct-gpu-mps
+  namespace: inference-team
+spec:
+  spec:
+    devices:
+      requests:
+        - name: gpu
+          exactly:
+            deviceClassName: gpu.nvidia.com
+            allocationMode: ExactCount
+            count: 1
+      config:
+        - requests: ["gpu"]
+          opaque:
+            driver: gpu.nvidia.com
+            parameters:
+              apiVersion: resource.nvidia.com/v1beta1
+              kind: GpuConfig
+              sharing:
+                strategy: MPS
+                mpsConfig:
+                  defaultActiveThreadPercentage: 25
